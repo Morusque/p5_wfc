@@ -5,11 +5,11 @@ import java.util.LinkedList;
 import java.util.Map;
 
 PImage pattern;
-int[][] inputGrid; // Grid for the output pattern
-int[][] outputGrid; // Grid for the output pattern
+int[][] inputGrid;  // Grid for the input pattern
+int[][] outputGrid; // Grid for the output pattern <- for optimization this should probably also contain the possibilities and only be updated when needed, not recomputed every time 
 ArrayList<Tile> tiles = new ArrayList<Tile>();
-int tileWidth = 2;
-int tileHeight = 2;
+int tileWidth = 4;
+int tileHeight = 4;
 
 void setup() {
   size(512, 512);
@@ -45,8 +45,8 @@ class Tile {
 }
 
 void analyzePattern() {
-  int inputGridWidth = ceil((float) pattern.width / tileWidth);
-  int inputGridHeight = ceil((float) pattern.height / tileHeight);
+  int inputGridWidth = ceil((float) pattern.width);
+  int inputGridHeight = ceil((float) pattern.height);
   inputGrid = new int[inputGridWidth][inputGridHeight];
 
   PGraphics doubledPattern = createGraphics(pattern.width + tileWidth, pattern.height + tileHeight);
@@ -57,9 +57,9 @@ void analyzePattern() {
   doubledPattern.image(pattern, pattern.width, pattern.height);
   doubledPattern.endDraw();
 
-  for (int x = 0; x < inputGrid.length; x++) {
-    for (int y = 0; y < inputGrid[x].length; y++) {
-      PImage thisTile = doubledPattern.get(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
+  for (int x = 0; x < pattern.width; x++) {
+    for (int y = 0; y < pattern.height; y++) {
+      PImage thisTile = doubledPattern.get(x, y, tileWidth, tileHeight);
       boolean found = false;
       for (int i = 0; i < tiles.size(); i++) {
         if (tiles.get(i).imageEquals(thisTile)) {
@@ -94,10 +94,10 @@ void analyzePattern() {
   for (int x = 0; x < inputGridWidth; x++) {
     for (int y = 0; y < inputGridHeight; y++) {
       int tileIndex = inputGrid[x][y];
-      updateAdjacencyWithFrequency(x, y - 1, tileIndex, 0); // Up
-      updateAdjacencyWithFrequency(x + 1, y, tileIndex, 1); // Right
-      updateAdjacencyWithFrequency(x, y + 1, tileIndex, 2); // Down
-      updateAdjacencyWithFrequency(x - 1, y, tileIndex, 3); // Left
+      updateAdjacencyWithFrequency(x, y - tileHeight, tileIndex, 0); // Up
+      updateAdjacencyWithFrequency(x + tileWidth, y, tileIndex, 1); // Right
+      updateAdjacencyWithFrequency(x, y + tileHeight, tileIndex, 2); // Down
+      updateAdjacencyWithFrequency(x - tileWidth, y, tileIndex, 3); // Left
     }
   }
 
