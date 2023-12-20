@@ -6,13 +6,15 @@ import java.util.Map;
 
 PImage pattern;
 int[][] inputGrid;  // Grid for the input pattern
-int[][] outputGrid; // Grid for the output pattern <- for optimization this should probably also contain the possibilities and only be updated when needed, not recomputed every time 
+int[][] outputGrid; // Grid for the output pattern <- for optimization this should probably also contain the possibilities and only be updated when needed, not recomputed every time
 ArrayList<Tile> tiles = new ArrayList<Tile>();
-int tileWidth = 4;
-int tileHeight = 4;
+int tileWidth = 3;
+int tileHeight = 3;
+
+int[][] explosionRange;
 
 void setup() {
-  size(512, 512);
+  size(256, 256);
   pattern = loadImage("pattern.png");
   pattern.loadPixels(); // Load the pixels of the pattern
   analyzePattern();
@@ -151,9 +153,11 @@ void printAdjacencyRules() {
 void initializeOutputGrid() {
   // Initialize the output grid
   outputGrid = new int[ceil(width/tileWidth)][ceil(height/tileHeight)];
+  explosionRange = new int[ceil(width/tileWidth)][ceil(height/tileHeight)];
   for (int x = 0; x < outputGrid.length; x++) {
     for (int y = 0; y < outputGrid[x].length; y++) {
       outputGrid[x][y] = -1; // -1 to represent an undecided state
+      explosionRange[x][y] = 2;
     }
   }
 }
@@ -196,7 +200,10 @@ void collapseWaveFunction() {
   int selectedTile = selectTileBasedOnConstraints(x, y);
   if (selectedTile!=-1) {
     outputGrid[x][y] = selectedTile;
-  } else outputGrid[x][y] = -2; // Deliberate empty tile
+  } else {
+    // outputGrid[x][y] = -2; // Deliberate empty tile
+    explode(x, y);
+  }
   propagateConstraints(x, y);
 }
 
@@ -305,7 +312,11 @@ void updateNeighbor(int x, int y, Queue<int[]> queue) {
     // If the new tile is different from the current tile
     if (selectedTile != -1 && !possibleTilesBeforeUpdate.contains(selectedTile)) {
       // Update the grid with the new tile selection
-      outputGrid[x][y] = selectedTile;
+      if (selectedTile != -2) {
+        outputGrid[x][y] = selectedTile;
+      } else {
+        explode(x, y);
+      }
       // Since the state of this cell has changed, add its neighbors to the queue
       queue.add(new int[]{x, y});
     }
@@ -348,6 +359,15 @@ boolean isGenerationComplete() {
     }
   }
   return true;
+}
+
+void explode(int x, int y) {
+  for (int x2=-explosionRange[x][y]; x2<explosionRange[x][y]; x2++) {
+    for (int y2=-explosionRange[x][y]; y2<explosionRange[x][y]; y2++) {
+      outputGrid[(x+x2+outputGrid.length)%outputGrid.length][(y+y2+outputGrid[x].length)%outputGrid[x].length] = -1;
+    }
+  }
+  explosionRange[x][y]++;
 }
 
 void draw() {
